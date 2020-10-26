@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# dib-lint: disable=safe_sudo
+
+if [ "${DIB_DEBUG_TRACE:-0}" -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+
+[ -n "$TARGET_ROOT" ]
+
+USER=${USER:-$(whoami)}
+
+source $_LIB/img-functions
+
+IMAGE_PATH=$(readlink -f $IMAGE_NAME)
+cd $TARGET_ROOT
+
+echo "#disabled" > ./tmp/fstab.new
+sudo mv ./tmp/fstab.new ./etc/fstab
+sudo ln -s ./sbin/init ./
+
+sudo find . -xdev \
+    -path './sys/*' -prune -o \
+    -path './tmp/*' -prune -o \
+    -path './boot/*' -prune -o \
+    -path './root/.cache' -prune -o \
+    -path './usr/src/kernels/*' -prune -o \
+    -path './var/cache/*' -prune -o \
+    -path './var/log/*' -prune -o \
+    -name '*.pyc' -prune -o \
+    -name '*.pyo' -prune -o \
+    -print | sudo cpio -o -H newc | gzip > ${IMAGE_PATH}.initramfs
+
+select_boot_kernel_initrd $TARGET_ROOT
+sudo cp $BOOTDIR/$KERNEL ${IMAGE_PATH}.kernel
+sudo chown $USER: ${IMAGE_PATH}.kernel
+# Output image sizes for debugging
+sudo ls -lh ${IMAGE_PATH}.*
