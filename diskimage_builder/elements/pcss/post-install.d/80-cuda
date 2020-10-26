@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# setup cuda path
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+# update PATH and LD_LIBRARY_PATH
+cat <<EOF > /etc/profile.d/Z99-PCSS-cuda-init.sh
+export PATH=/usr/local/cuda-10.0/bin${PATH:+:${PATH}}
+export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+EOF
+
+chmod +x /etc/profile.d/Z99-PCSS-cuda-init.sh

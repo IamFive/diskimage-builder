@@ -1,0 +1,44 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+
+[ -n "$ARCH" ]
+[ -n "$PSCC_CACHE_DIR" ]
+
+
+CUDA_MD5SUM_FILE_URL=https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/md5sum.txt
+
+if [[ "amd64 x86_64" =~ "$ARCH" ]]; then
+    ARCH="x86_64"
+    CUDA_LINUX_BIN_URL=https://developer.nvidia.com/compute/cuda/10.0/Prod/local_installers/cuda_10.0.130_410.48_linux
+elif [[ "ppc64le" =~ "$ARCH" ]]; then
+    # CUDA only provide bin file for x86_64 on centos 7
+    # CUDA_LINUX_BIN_URL=https://developer.nvidia.com/compute/cuda/10.0/Prod/local_installers/cuda-repo-rhel7-10-0-local-10.0.130-410.48-1.0-1.ppc64le
+    echo 'CUDA Toolkit 10.00 only support ARCH x86_64 for CentOS 7.'
+    exit 1
+else
+    echo 'CUDA Toolkit 10.00 only support ARCH x86_64 for CentOS 7.'
+    exit 1
+fi
+
+
+if [ -n "$DIB_OFFLINE" -a -f "$CACHED_CUDA_BIN_FILE" ] ; then
+    echo "Not checking freshness of cached $CACHED_CUDA_BIN_FILE."
+else
+    echo "Fetching CUDA installation BIN files"
+    $TMP_HOOKS_PATH/bin/cache-url $CUDA_LINUX_BIN_URL $CACHED_CUDA_BIN_FILE
+    $TMP_HOOKS_PATH/bin/cache-url $CUDA_MD5SUM_FILE_URL $CACHED_CUDA_MD5SUM_FILE
+    # Calculate md5sum of downloaded bin file and check against content from md5sum file
+    MD5SUM=$(md5sum $CACHED_CUDA_BIN_FILE | cut -d " " -f1)
+    grep $CACHED_CUDA_BIN_FILE_NAME $CACHED_CUDA_MD5SUM_FILE | grep -q $MD5SUM
+    
+    chmod +x $CACHED_CUDA_BIN_FILE
+fi
+
+# copy CUDA bin file
+sudo cp $CACHED_CUDA_BIN_FILE $TMP_HOOKS_PATH/$CACHED_CUDA_BIN_FILE_NAME
