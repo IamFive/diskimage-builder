@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ "${DIB_DEBUG_TRACE:-0}" -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+# enable publib key authentication
+if grep -qE "PubkeyAuthentication" /etc/ssh/sshd_config; then
+    echo "Update sshd_config: set PubkeyAuthentication option to yes."
+    sed -i "s/.*PubkeyAuthentication.*/PubkeyAuthentication yes/g" /etc/ssh/sshd_config
+else
+    echo "Update sshd_config: append 'PubkeyAuthentication yes' to /etc/ssh/sshd_config."
+    echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
+fi

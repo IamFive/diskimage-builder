@@ -2,6 +2,8 @@
 openssh-server
 ==============
 This element ensures that openssh server is installed and enabled during boot.
+Since login with public key is mostly used in cloud environment, 
+`PubkeyAuthentication` is enaled also in this element.
 
 To disable hardening of sshd configuration, you have to set
 ``DIB_OPENSSH_SERVER_HARDENING`` to 0. This option will configure KexAlgorithms,
