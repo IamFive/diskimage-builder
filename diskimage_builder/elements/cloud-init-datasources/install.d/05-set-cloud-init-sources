@@ -31,4 +31,19 @@ datasource:
         strict_id: false
 EOF
     fi
+
+
+    # increase timeout and retries for OpenStack
+    if [[ $DIB_CLOUD_INIT_DATASOURCES =~ OpenStack ]]; then
+        cat > /etc/cloud/cloud.cfg.d/92-openstack-datasource.cfg <<EOF
+#cloud-config
+datasource:
+  OpenStack:
+    metadata_urls: ["http://169.254.169.254"]
+    max_wait: -1
+    timeout: 60
+    retries: 6
+    apply_network_config: True
+EOF
+    fi
 fi
