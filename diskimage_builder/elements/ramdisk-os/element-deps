@@ -3,3 +3,4 @@ no-final-image
 dhcp-all-interfaces
 openssh-server
 runtime-ssh-host-keys
+stable-interface-names
