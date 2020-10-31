@@ -1,2 +1,4 @@
 cache-url
 package-installs
+epel
+dkms
