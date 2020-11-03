@@ -13,7 +13,7 @@ yum install -y "kernel-devel-$(uname -r)"
 if [ -f /tmp/in_target.d/$CACHED_CUDA_11_BIN_FILE_NAME ]; then
     # install CUDA toolkits
     lsmod
-    sudo sh /tmp/in_target.d/$CACHED_CUDA_11_BIN_FILE_NAME --silent --driver || /bin/true
+    sudo sh /tmp/in_target.d/$CACHED_CUDA_11_BIN_FILE_NAME --silent --driver
     sudo cat /var/log/nvidia-installer.log
 else
     echo "Could find cuda bin file: /tmp/in_target.d/$CACHED_CUDA_11_BIN_FILE_NAME"
