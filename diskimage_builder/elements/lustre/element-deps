@@ -1,0 +1,5 @@
+cache-url
+package-installs
+epel
+disable-selinux
+install-static

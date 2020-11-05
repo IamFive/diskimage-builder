@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+# TODO(turnbig): add dependencies
+
+# update lustre-client repo information
+cat > /etc/yum.repos.d/lustre-client.repo <<EOF
+[lustre-client]
+name=Lustre Client Repo
+gpgcheck=0
+baseurl=https://downloads.whamcloud.com/public/lustre/lustre-${DIB_LUSTRE_VERSION}-ib/MOFED-${DIB_MLNX_OFED_VERSION}/el7/client/
+EOF
+
+# sudo yum --enablerepo=lustre-client install "libibmad*" "libibumad*" "libibverbs*" "librdmacm*" 
+# sudo yum --enablerepo=lustre-client install  "mlnx-ofa_kernel*" ibutils
+
+# install lustre client packages
+sudo yum install --enablerepo=lustre-client -y kmod-lustre-client kmod-lustre-client-tests
+sudo yum install --enablerepo=lustre-client -y lustre-client lustre-client-tests lustre-client-dkms lustre-iokit
