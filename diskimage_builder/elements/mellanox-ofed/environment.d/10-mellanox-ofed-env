@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# currently, lustre element only supports CentOS 7.8
+if [ "$DISTRO_NAME" != "centos" -o "${DIB_RELEASE}" != 7 ]; then
+    echo 'lustre is a custom element used in PCSS ramdisk provisioning.'
+    echo 'lustre element only support CentOS 7 distribution for now.'
+    exit 1
+fi
+
+# setup cache dir
+MLNX_CACHE_DIR=$DIB_IMAGE_CACHE/mlnx/$DISTRO_NAME/${DIB_RELEASE}
+export MLNX_CACHE_DIR
+
+DIB_MLNX_OFED_VERSION=${DIB_MLNX_OFED_VERSION:-4.9-0.1.7.0}
+export DIB_MLNX_OFED_VERSION
+
+# export cached Mellanox OFED driver installation file env
+CACHED_MLNX_OFED_DRIVER_FILE_NAME=MLNX_OFED_LINUX-${DIB_MLNX_OFED_VERSION}-rhel7.8-x86_64.tgz
+export CACHED_MLNX_OFED_DRIVER_FILE_NAME
+
+CACHED_MLNX_OFED_DRIVER_FILE=$MLNX_CACHE_DIR/$CACHED_MLNX_OFED_DRIVER_FILE_NAME
+export CACHED_MLNX_OFED_DRIVER_FILE

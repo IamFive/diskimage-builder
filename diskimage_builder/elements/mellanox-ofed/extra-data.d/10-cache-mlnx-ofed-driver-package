@@ -1,0 +1,43 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+
+[ -n "$ARCH" ]
+[ -n "$MLNX_CACHE_DIR" ]
+
+
+if [[ "amd64 x86_64" =~ "$ARCH" ]]; then
+    ARCH="x86_64"
+    MLNX_OFED_DRIVER_FILE_URL=https://www.mellanox.com/downloads/ofed/MLNX_OFED-${DIB_MLNX_OFED_VERSION}/MLNX_OFED_LINUX-${DIB_MLNX_OFED_VERSION}-rhel7.8-x86_64.tgz
+    MLNX_OFED_DRIVER_MD5SUM=380ced3c7d0cbc3e2935b3f346b6054f
+elif [[ "ppc64" =~ "$ARCH" ]]; then
+    MLNX_OFED_DRIVER_FILE_URL=https://www.mellanox.com/downloads/ofed/MLNX_OFED-${DIB_MLNX_OFED_VERSION}/MLNX_OFED_LINUX-${DIB_MLNX_OFED_VERSION}-rhel7.8-ppc64.tgz
+    MLNX_OFED_DRIVER_MD5SUM=f98f4d9f8ce3aa362e7457befc7f0a24
+elif [[ "ppc64le" =~ "$ARCH" ]]; then
+    MLNX_OFED_DRIVER_FILE_URL=https://www.mellanox.com/downloads/ofed/MLNX_OFED-${DIB_MLNX_OFED_VERSION}/MLNX_OFED_LINUX-${DIB_MLNX_OFED_VERSION}-rhel7.8-ppc64le.tgz
+    MLNX_OFED_DRIVER_MD5SUM=c837259b776683a44c5f826fedb7df77
+else
+    echo 'Mellanox OFED only support ARCH x86_64, ppc64 and ppc64le for CentOS 7.8.'
+    exit 1
+fi
+
+
+if [ -n "$DIB_OFFLINE" -a -f "$CACHED_MLNX_OFED_DRIVER_FILE" ] ; then
+    echo "Not checking freshness of cached $CACHED_MLNX_OFED_DRIVER_FILE."
+else
+    echo "Fetching Mellanox OFED driver installation file"
+    $TMP_HOOKS_PATH/bin/cache-url $MLNX_OFED_DRIVER_FILE_URL $CACHED_MLNX_OFED_DRIVER_FILE
+
+    # Calculate md5sum of downloaded bin file and check against content from md5sum file
+    MD5SUM=$(md5sum $CACHED_MLNX_OFED_DRIVER_FILE | cut -d " " -f1)
+    [[ $MD5SUM = $MLNX_OFED_DRIVER_MD5SUM ]]
+
+fi
+
+# copy Mellanox bin file
+sudo cp $CACHED_MLNX_OFED_DRIVER_FILE $TMP_HOOKS_PATH/$CACHED_MLNX_OFED_DRIVER_FILE_NAME
