@@ -6,7 +6,15 @@ fi
 set -eu
 set -o pipefail
 
-# TODO(turnbig): add dependencies
+# currently, lustre element only supports CentOS 7.8
+if [ "$DISTRO_NAME" != "centos" -o "${DIB_RELEASE}" != 7 ]; then
+    echo 'lustre is a custom element used in PCSS ramdisk provisioning.'
+    echo 'lustre element only support CentOS 7 distribution for now.'
+    exit 1
+fi
+
+DIB_LUSTRE_VERSION=${DIB_LUSTRE_VERSION:-2.12.5}
+export DIB_LUSTRE_VERSION
 
 # update lustre-client repo information
 cat > /etc/yum.repos.d/lustre-client.repo <<EOF

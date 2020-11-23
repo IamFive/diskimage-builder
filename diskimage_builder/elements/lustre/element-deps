@@ -1,5 +1,6 @@
 cache-url
 package-installs
 epel
+mellanox-ofed
 disable-selinux
 install-static
