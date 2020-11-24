@@ -1,9 +1,3 @@
 # Minimum element uninstalls firmware
 linux-firmware:
   phase: post-install.d
-  when: 
-    - DISTRO_NAME = rhel
-    - DISTRO_NAME = rhel7
-    - DISTRO_NAME = centos
-    - DISTRO_NAME = centos7
-    - DISTRO_NAME = fedora
