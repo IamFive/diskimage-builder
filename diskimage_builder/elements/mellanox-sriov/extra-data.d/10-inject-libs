@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-1} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+LIB_PATH="$TMP_MOUNT_PATH/tmp/dib_libs"
+mkdir -p $LIB_PATH
+
+cp $_LIB/img-functions $LIB_PATH

@@ -1,0 +1,10 @@
+[Unit]
+Description=Create Mellanox SR-IOV interfaces 
+After=network.target cloud-final.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/create-sriov-interfaces.py
+
+[Install]
+WantedBy=multi-user.target

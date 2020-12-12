@@ -1,0 +1,117 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+_LIB="/tmp/dib_libs"
+source $_LIB/img-functions
+SCRIPTDIR=$(dirname $0)
+
+
+function enable_opensm_virtual () {
+    if [ -f /etc/opensm/opensm.conf ]; then
+        if grep -qE "virt_enabled" /etc/opensm/opensm.conf; then
+            echo "Update opensm.conf: set virt_enabled option to 2."
+            sudo sed -i "s/.*virt_enabled.*/virt_enabled 2/g" /etc/opensm/opensm.conf
+        else
+            echo "Update opensm.conf: append 'virt_enabled 2' to /etc/opensm/opensm.conf."
+            sudo echo "virt_enabled 2" >> /etc/opensm/opensm.conf
+        fi
+    else
+        sudo echo "virt_enabled 2" >> /etc/opensm/opensm.conf
+    fi
+
+    sudo chmod 0644 /etc/opensm/opensm.conf
+}
+
+function enable_iommu () {
+    if [ -f /boot/grub2/grub.cfg ]; then
+        GRUB_FILE=/boot/grub2/grub.cfg
+    elif [ -f /boot/grub/grub.conf ]; then
+        GRUB_FILE=/boot/grub/grub.conf
+    else
+        echo "Can not find grub config file to enable iommu."
+        exit 1
+    fi
+
+    # get target kernel and initrd file name
+    select_boot_kernel_initrd ""
+
+    BOOT_KERNEL_OPTIONS=$(cat $GRUB_FILE | grep $KERNEL)
+    BOOT_KERNEL_OPTIONS_LINE=$(awk '/vmlinuz-3.10.0-1127.el7.x86_64/{ print NR; exit }' $GRUB_FILE)
+    if echo $BOOT_KERNEL_OPTIONS | grep -qE "intel_iommu"; then
+        echo "Update $GRUB_FILE: set intel_iommu option to on."
+        sudo sed -i "${BOOT_KERNEL_OPTIONS_LINE}s/ intel_iommu=\S*/ intel_iommu=on/g" $GRUB_FILE
+    else
+        echo "Update grub conf: append 'intel_iommu=on' to $GRUB_FILE."
+        sudo sed -i "${BOOT_KERNEL_OPTIONS_LINE}s/$/ intel_iommu=on/" $GRUB_FILE
+    fi
+
+    if echo $BOOT_KERNEL_OPTIONS | grep -qE "iommu"; then
+        echo "Update $GRUB_FILE: set iommu option to pt."
+        sudo sed -i "${BOOT_KERNEL_OPTIONS_LINE}s/ iommu=\S*/ iommu=pt/g" $GRUB_FILE
+    else
+        echo "Update grub conf: append 'iommu=pt' to $GRUB_FILE."
+        sudo sed -i "${BOOT_KERNEL_OPTIONS_LINE}s/$/ iommu=pt/" $GRUB_FILE
+    fi
+
+}
+
+function enable_sriov_in_firmware () {
+    # update variables in static scripts
+    sed -i "s/@DIB_MLNX_SRIOV_VFS_NUM@/$DIB_MLNX_SRIOV_VFS_NUM/" /usr/local/sbin/enable-sriov-in-firmware.sh
+
+    if [ $DIB_ENABLE_SRIOV_IN_FIRMWARE -eq 1 ]; then
+        case "$DIB_INIT_SYSTEM" in
+            systemd)
+                systemctl enable enable-sriov-in-firmware.service
+                ;;
+            *)
+                echo "Unsupported init system $DIB_INIT_SYSTEM"
+                exit 1
+                ;;
+        esac
+    else
+        case "$DIB_INIT_SYSTEM" in
+            systemd)
+                systemctl disable enable-sriov-in-firmware.service
+                ;;
+            *)
+                echo "Unsupported init system $DIB_INIT_SYSTEM"
+                exit 1
+                ;;
+        esac
+    fi
+}
+
+function create_sriov_interfaces () {
+    if [ $DIB_CREATE_SRIOV_INTERFACES -eq 1 ]; then
+        case "$DIB_INIT_SYSTEM" in
+            systemd)
+                systemctl enable create-sriov-interfaces.service
+                ;;
+            *)
+                echo "Unsupported init system $DIB_INIT_SYSTEM"
+                exit 1
+                ;;
+        esac
+    else
+        case "$DIB_INIT_SYSTEM" in
+            systemd)
+                systemctl disable create-sriov-interfaces.service
+                ;;
+            *)
+                echo "Unsupported init system $DIB_INIT_SYSTEM"
+                exit 1
+                ;;
+        esac
+    fi
+}
+
+enable_iommu
+enable_opensm_virtual
+enable_sriov_in_firmware
+create_sriov_interfaces
