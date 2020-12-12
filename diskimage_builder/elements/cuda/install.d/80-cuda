@@ -8,12 +8,20 @@ set -o pipefail
 
 # echo -e "blacklist nouveau\noptions nouveau modeset=0" >> /lib/modprobe.d/dist-blacklist.conf
 
-yum install -y "kernel-devel-$(uname -r)"
+# NOTE(qianbiao.ng): requires same kernel in image and build-host-server
+# yum install -y "kernel-devel-$(uname -r)"
 
 if [ -f /tmp/in_target.d/$CACHED_CUDA_11_BIN_FILE_NAME ]; then
     # install CUDA toolkits
-    lsmod
-    sudo sh /tmp/in_target.d/$CACHED_CUDA_11_BIN_FILE_NAME --silent --driver
+    KERNEL_PATH=$(ls /usr/src/kernels/* -d | sort -r | head -1)
+    if [ -z "$KERNEL_PATH" ]; then
+        ls /usr/src/kernels/
+        echo "Warning: could not find any kernel source."
+        exit 1
+    fi
+
+    sudo sh /tmp/in_target.d/$CACHED_CUDA_11_BIN_FILE_NAME \
+        --silent --driver --kernel-source-path=${KERNEL_PATH}
     sudo cat /var/log/nvidia-installer.log
 else
     echo "Could find cuda bin file: /tmp/in_target.d/$CACHED_CUDA_11_BIN_FILE_NAME"
